@@ -66,14 +66,16 @@ public class MoviePresenter implements MovieListPresenter {
     void onApiEventReceived(ApiEvent event) {
         switch (event.getEvent()) {
             case GET_MOVIES:
-                if (event.isSuccess()) {
-                    Realm realm = Realm.getDefaultInstance();
-                    RealmQuery<Movie> query = realm.where(Movie.class);
-                    RealmResults<Movie> result1 = query.findAll();
-                    mAlbumsView.updateList(result1);
-                } else
+                if (!event.isSuccess()) {
                     mAlbumsView.updateList(null);
-                return;
+                    return;
+                }
+
+                Realm realm = Realm.getDefaultInstance();
+                RealmQuery<Movie> query = realm.where(Movie.class);
+                RealmResults<Movie> result1 = query.findAll();
+                mAlbumsView.updateList(result1);
+
         }
     }
 }

@@ -15,9 +15,7 @@ public class MovieItemPresenter implements MovieItemMainPresenter {
     Movie mAlbum;
 
     public MovieItemPresenter() {
-//        mAlbum = album;
-//        mAlbumView = albumView;
-//        mAlbumView.update(album);
+
     }
 
     public void onBind(MovieHolder holder, Movie movie) {
@@ -27,16 +25,6 @@ public class MovieItemPresenter implements MovieItemMainPresenter {
         holder.setReleaseYear(movie.getReleaseYear());
         holder.setGenres(movie.getGenres());
     }
-
-//    public void onBindRepositoryRowViewAtPosition(int position, RepositoryRowView rowView) {
-//        Repository repo = repositories.get(position);
-//        rowView.setStarCount(repo.getStarsCount());
-//        rowView.setTitle(repo.getTitle());
-//    }
-//
-//    public int getRepositoriesRowsCount() {
-//        return repositories.size();
-//    }
 
 
     @Override

@@ -41,8 +41,8 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private Adapter mAdapter;
 
-    private static final String FILTER_YEAR = "filter_year";
-    private Set<String> filter_year = new HashSet<>();
+    private static final String FILTER_YEAR = "filterByYears";
+    private Set<String> filterByYears = new HashSet<>();
     private static final String FILTER = "filter";
     private Set<String> filter = new HashSet<>();
     private int orientation;
@@ -63,7 +63,7 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
         if (savedInstanceState != null && !savedInstanceState.isEmpty()) {
             orientation = savedInstanceState.getInt(ORIENTATION);
             filter = (HashSet) savedInstanceState.getSerializable(FILTER);
-            filter_year = (HashSet) savedInstanceState.getSerializable(FILTER_YEAR);
+            filterByYears = (HashSet) savedInstanceState.getSerializable(FILTER_YEAR);
         } else {
             if (getActivity() != null) {
                 mMoviePresenter.load();
@@ -88,7 +88,7 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(ORIENTATION, orientation);
         outState.putSerializable(FILTER, (Serializable) filter);
-        outState.putSerializable(FILTER_YEAR, (Serializable) filter_year);
+        outState.putSerializable(FILTER_YEAR, (Serializable) filterByYears);
         super.onSaveInstanceState(outState);
     }
 
@@ -108,10 +108,6 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     }
 
     public void setList(List<Movie> movieList) {
-//        if (movieList == null || movieList.isEmpty())
-//            return;
-
-
         if (mAdapter == null) {
             mAdapter = new Adapter(getActivity(), movieList);
             mRecyclerView.setAdapter(mAdapter);
@@ -119,8 +115,6 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
             mAdapter.setMovieList(movieList);
             mAdapter.notifyDataSetChanged();
         }
-
-
     }
 
     @Override
@@ -131,12 +125,13 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
 
     @Override
     public void onRefresh() {
-        if (mMoviePresenter != null) {
-            if (filter.isEmpty()) {
-                mMoviePresenter.load();
-            } else {
-                mMoviePresenter.filter(filter, filter_year);
-            }
+        if (mMoviePresenter == null)
+            return;
+
+        if (filter.isEmpty()) {
+            mMoviePresenter.load();
+        } else {
+            mMoviePresenter.filter(filter, filterByYears);
         }
     }
 
@@ -146,6 +141,7 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
             case R.id.menu_filter:
                 showPopupMenu(getActivity().findViewById(R.id.menu_filter));
                 break;
+
             case R.id.menu_year:
                 showYearPopup(getActivity().findViewById(R.id.menu_filter));
                 break;
@@ -162,7 +158,7 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
         Collections.sort(genresSorted, Utils.ALPHABETICAL_ORDER);
         PopupMenu popupMenu = new PopupMenu(getActivity(), v);
         for (String name : genresSorted) {
-            popupMenu.getMenu().add(name).setCheckable(true).setChecked(filter.contains(name) ? true : false);
+            popupMenu.getMenu().add(name).setCheckable(true).setChecked(filter.contains(name));
 
         }
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -174,17 +170,11 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
                 } else {
                     filter.remove(String.valueOf(item.getTitle()));
                 }
-                mMoviePresenter.filter(filter, filter_year);
+                mMoviePresenter.filter(filter, filterByYears);
                 return false;
             }
         });
 
-        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-
-            @Override
-            public void onDismiss(PopupMenu menu) {
-            }
-        });
         popupMenu.show();
     }
 
@@ -192,36 +182,28 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     private void showYearPopup(View v) {
         Set<String> genres = SPUtils.getYears(getActivity());
         List<String> yeasSorted = new ArrayList<>();
-//        if (genresSorted.isEmpty())
-//            return;
         yeasSorted.addAll(genres);
         Collections.sort(yeasSorted, Utils.ALPHABETICAL_ORDER);
         Collections.sort(yeasSorted, Collections.reverseOrder());
         PopupMenu popupMenu = new PopupMenu(getActivity(), v);
         for (String year : yeasSorted) {
-            popupMenu.getMenu().add(year).setCheckable(true).setChecked(filter_year.contains(year) ? true : false);
-
+            popupMenu.getMenu().add(year).setCheckable(true).setChecked(filterByYears.contains(year));
         }
+
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 item.setChecked(!item.isChecked());
                 if (item.isChecked()) {
-                    filter_year.add(String.valueOf(item.getTitle()));
+                    filterByYears.add(String.valueOf(item.getTitle()));
                 } else {
-                    filter_year.remove(String.valueOf(item.getTitle()));
+                    filterByYears.remove(String.valueOf(item.getTitle()));
                 }
-                mMoviePresenter.filter(filter, filter_year);
+                mMoviePresenter.filter(filter, filterByYears);
                 return false;
             }
         });
 
-        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-
-            @Override
-            public void onDismiss(PopupMenu menu) {
-            }
-        });
         popupMenu.show();
     }
 

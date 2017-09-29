@@ -120,21 +120,6 @@ public class DataLoaderService extends IntentService {
 
     private OkHttpClient getClient() {
         OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder();
-        httpClientBuilder.addInterceptor(new Interceptor() {
-            @Override
-            public Response intercept(Chain chain) throws IOException {
-                Request original = chain.request();
-
-                Log.d(TAG, "request tag " + chain.request().tag());
-                Request request;
-                request = original;
-
-                okhttp3.Response response = chain.proceed(request);
-
-                return response;
-            }
-        });
-
 
         httpClientBuilder.connectTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)

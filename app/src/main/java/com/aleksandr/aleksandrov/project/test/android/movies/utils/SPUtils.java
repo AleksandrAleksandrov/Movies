@@ -11,9 +11,9 @@ import java.util.Set;
 
 public class SPUtils {
 
-    public static final String GENRES_PREF = "genres_pref";
-    public static final String GENRES = "genres";
-    public static final String YEARS = "years";
+    private static final String GENRES_PREF = "genres_pref";
+    private static final String GENRES = "genres";
+    private static final String YEARS = "years";
 
     public static void setGenres(Context context, Set<String> genres) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(GENRES_PREF, Context.MODE_PRIVATE);
