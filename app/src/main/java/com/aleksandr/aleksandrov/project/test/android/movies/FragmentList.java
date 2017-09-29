@@ -13,11 +13,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.aleksandr.aleksandrov.project.test.android.movies.adapter.Adapter;
 import com.aleksandr.aleksandrov.project.test.android.movies.models.Movie;
 import com.aleksandr.aleksandrov.project.test.android.movies.presenter.MoviePresenter;
-import com.aleksandr.aleksandrov.project.test.android.movies.service.DBHelper;
 import com.aleksandr.aleksandrov.project.test.android.movies.utils.SPUtils;
 import com.aleksandr.aleksandrov.project.test.android.movies.utils.Utils;
 import com.aleksandr.aleksandrov.project.test.android.movies.view.MoviesView;
@@ -40,13 +41,18 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private Adapter mAdapter;
+    private TextView tvEmpty;
 
+    private static final String RATING = "rating";
+    private boolean isRating;
     private static final String FILTER_YEAR = "filterByYears";
     private Set<String> filterByYears = new HashSet<>();
     private static final String FILTER = "filter";
     private Set<String> filter = new HashSet<>();
     private int orientation;
     private static final String ORIENTATION = "orientation";
+    private static final String REFRESHING = "refreshing";
+    private boolean isRefreshing;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -64,6 +70,8 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
             orientation = savedInstanceState.getInt(ORIENTATION);
             filter = (HashSet) savedInstanceState.getSerializable(FILTER);
             filterByYears = (HashSet) savedInstanceState.getSerializable(FILTER_YEAR);
+            isRating = savedInstanceState.getBoolean(RATING);
+            isRefreshing = savedInstanceState.getBoolean(REFRESHING);
         } else {
             if (getActivity() != null) {
                 mMoviePresenter.load();
@@ -89,6 +97,8 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
         outState.putInt(ORIENTATION, orientation);
         outState.putSerializable(FILTER, (Serializable) filter);
         outState.putSerializable(FILTER_YEAR, (Serializable) filterByYears);
+        outState.putBoolean(RATING, isRating);
+        outState.putBoolean(REFRESHING, isRefreshing);
         super.onSaveInstanceState(outState);
     }
 
@@ -98,16 +108,20 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
         View view = inflater.inflate(R.layout.fragment_list, container, false);
 
         mSwipeRefreshLayout = view.findViewById(R.id.swipeRefresh);
+        tvEmpty = view.findViewById(R.id.text_view_no_favourite);
         mSwipeRefreshLayout.setOnRefreshListener(this);
         mRecyclerView = view.findViewById(R.id.rvAlbums);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        setList(DBHelper.getMovies());
+        setFilter();
 
         return view;
     }
 
     public void setList(List<Movie> movieList) {
+
+        tvEmpty.setVisibility(movieList.isEmpty() ? View.VISIBLE : View.GONE);
+
         if (mAdapter == null) {
             mAdapter = new Adapter(getActivity(), movieList);
             mRecyclerView.setAdapter(mAdapter);
@@ -120,18 +134,36 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     @Override
     public void updateList(List<Movie> movieList) {
         setList(movieList);
-        mSwipeRefreshLayout.setRefreshing(false);
+        cencelRefreshing();
+    }
+
+    @Override
+    public void loaded() {
+        setFilter();
+        cencelRefreshing();
+    }
+
+    @Override
+    public void loadFailed() {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                cencelRefreshing();
+                Toast.makeText(getActivity(), R.string.no_internet, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override
     public void onRefresh() {
-        if (mMoviePresenter == null)
+        if (mMoviePresenter == null || isRefreshing)
             return;
 
+        isRefreshing = true;
         if (filter.isEmpty()) {
             mMoviePresenter.load();
         } else {
-            mMoviePresenter.filter(filter, filterByYears);
+            setFilter();
         }
     }
 
@@ -145,6 +177,12 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
             case R.id.menu_year:
                 showYearPopup(getActivity().findViewById(R.id.menu_filter));
                 break;
+            case R.id.menu_rating:
+                item.setChecked(!item.isChecked());
+                item.setIcon(item.isChecked() ? R.drawable.ic_star : R.drawable.ic_star_border);
+                isRating = item.isChecked();
+                setFilter();
+                break;
         }
         return true;
     }
@@ -152,8 +190,7 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
     private void showPopupMenu(View v) {
         Set<String> genres = SPUtils.getGenres(getActivity());
         List<String> genresSorted = new ArrayList<>();
-//        if (genresSorted.isEmpty())
-//            return;
+
         genresSorted.addAll(genres);
         Collections.sort(genresSorted, Utils.ALPHABETICAL_ORDER);
         PopupMenu popupMenu = new PopupMenu(getActivity(), v);
@@ -170,14 +207,13 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
                 } else {
                     filter.remove(String.valueOf(item.getTitle()));
                 }
-                mMoviePresenter.filter(filter, filterByYears);
+                setFilter();
                 return false;
             }
         });
 
         popupMenu.show();
     }
-
 
     private void showYearPopup(View v) {
         Set<String> genres = SPUtils.getYears(getActivity());
@@ -199,7 +235,7 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
                 } else {
                     filterByYears.remove(String.valueOf(item.getTitle()));
                 }
-                mMoviePresenter.filter(filter, filterByYears);
+                setFilter();
                 return false;
             }
         });
@@ -207,9 +243,26 @@ public class FragmentList extends Fragment implements MoviesView, SwipeRefreshLa
         popupMenu.show();
     }
 
+    private void setFilter() {
+        String[] filt = (String[]) filter.toArray(new String[filter.size()]);
+        String[] year = (String[]) filterByYears.toArray(new String[filterByYears.size()]);
+        Integer[] yearsInt = new Integer[year.length];
+
+        for (int i = 0; i < year.length; i++) {
+            yearsInt[i] = Integer.parseInt(year[i]);
+        }
+        mMoviePresenter.filter(isRating, filt, yearsInt);
+    }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         getActivity().getMenuInflater().inflate(R.menu.main, menu);
+        menu.findItem(R.id.menu_rating).setChecked(isRating)
+                .setIcon(isRating ? R.drawable.ic_star : R.drawable.ic_star_border);
+    }
+
+    private void cencelRefreshing() {
+        mSwipeRefreshLayout.setRefreshing(false);
+        isRefreshing = false;
     }
 }

@@ -42,7 +42,7 @@ public class MovieHolder extends RecyclerView.ViewHolder implements MovieView {
 
     @Override
     public void update(Movie movie) {
-//        mTitle.setText(album.getTitle());
+
     }
 
     @Override
@@ -70,7 +70,7 @@ public class MovieHolder extends RecyclerView.ViewHolder implements MovieView {
     public void setGenres(List<Genre> genres) {
         StringBuilder stringBuilder = new StringBuilder();
         for (Genre genre : genres) {
-            stringBuilder.append(genre.getGenreName() + ", ");
+            stringBuilder.append(genre.getGenreName() + " ");
         }
         mGenres.setText(String.valueOf(stringBuilder));
     }

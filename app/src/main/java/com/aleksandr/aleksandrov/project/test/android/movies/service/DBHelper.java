@@ -1,13 +1,11 @@
 package com.aleksandr.aleksandrov.project.test.android.movies.service;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.aleksandr.aleksandrov.project.test.android.movies.models.Movie;
 import com.aleksandr.aleksandrov.project.test.android.movies.utils.SPUtils;
 import com.aleksandr.aleksandrov.project.test.android.movies.utils.Utils;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,28 +40,24 @@ public class DBHelper {
         return query.findAll();
     }
 
-    public static List<Movie> getFiltered(Set filter, Set years) {
+    public static List<Movie> getFiltered(boolean isRating, String[] filter, Integer[] years) {
 
-        String[] filt = (String[]) filter.toArray(new String[filter.size()]);
-        String[] year = (String[]) years.toArray(new String[years.size()]);
-        Integer[] yearsInt = new Integer[year.length];
 
-        for (int i = 0; i < year.length; i++) {
-            yearsInt[i] = Integer.parseInt(year[i]);
-        }
 
         Realm realm = Realm.getDefaultInstance();
         RealmQuery query = realm.where(Movie.class);
-        if (!filter.isEmpty())
-            query = query.in("genres.genreName", filt);
+        if (filter.length != 0)
+            query = query.in("genres.genreName", filter);
 
-        if (!years.isEmpty())
-            query = query.in("releaseYear", yearsInt);
+        if (years.length != 0)
+            query = query.in("releaseYear", years);
+        RealmResults<Movie> first;
 
-        RealmResults<Movie> first = query.findAll();
+        if (!isRating)
+             first = query.findAll();
+        else
+            first = query.findAllSorted("rating", Sort.DESCENDING);
 
-        first.sort("rating", Sort.DESCENDING);
-        Log.d(TAG, "results count " + first.size());
         return first;
     }
 

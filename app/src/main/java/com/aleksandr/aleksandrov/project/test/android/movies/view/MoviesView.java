@@ -11,4 +11,8 @@ import java.util.List;
 public interface MoviesView extends BaseView {
 
     void updateList(List<Movie> movieList);
+
+    void loaded();
+
+    void loadFailed();
 }

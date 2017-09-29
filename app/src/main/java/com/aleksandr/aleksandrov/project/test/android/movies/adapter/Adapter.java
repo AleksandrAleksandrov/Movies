@@ -43,7 +43,6 @@ public class Adapter extends RecyclerView.Adapter<MovieHolder> {
 
     @Override
     public void onBindViewHolder(MovieHolder holder, int position) {
-//        holder.onBind(mMovieList.get(position));
         albumItemPresenter.onBind(holder, mMovieList.get(position));
     }
 

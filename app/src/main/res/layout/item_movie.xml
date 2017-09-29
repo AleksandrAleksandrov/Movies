@@ -26,18 +26,21 @@
 
             <RatingBar
                 android:id="@+id/rbAlbumRating"
+                style="@style/Widget.AppCompat.RatingBar.Small"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:stepSize="1.0"
-                android:numStars="5"
+                android:stepSize="0.1"
+                android:numStars="10"
+                android:max="10"
                 android:isIndicator="true"
-                android:layout_alignParentRight="true"
-                android:layout_toRightOf="@id/ivAlbumCover"/>
+                android:layout_alignParentRight="true"/>
 
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:paddingTop="10dp"
                 android:layout_below="@id/rbAlbumRating"
                 android:layout_alignParentRight="true"
                 tools:text="Title"/>
@@ -46,6 +49,8 @@
                 android:id="@+id/tvReleaseYear"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:paddingTop="10dp"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentBottom="true"
                 tools:text="2017"/>
@@ -55,6 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tvTitle"
+                android:textSize="16sp"
                 android:layout_alignParentRight="true"
                 tools:text="Genres"/>
 

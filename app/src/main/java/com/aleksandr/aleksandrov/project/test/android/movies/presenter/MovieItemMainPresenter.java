@@ -5,7 +5,5 @@ package com.aleksandr.aleksandrov.project.test.android.movies.presenter;
  */
 
 public interface MovieItemMainPresenter {
-    void setTitle(String title);
 
-    void setImage(String url);
 }

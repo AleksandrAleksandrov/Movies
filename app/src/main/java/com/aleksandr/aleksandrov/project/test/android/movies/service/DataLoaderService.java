@@ -1,7 +1,10 @@
 package com.aleksandr.aleksandrov.project.test.android.movies.service;
 
 import android.app.IntentService;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -13,21 +16,17 @@ import com.google.gson.GsonBuilder;
 
 import org.greenrobot.eventbus.EventBus;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.aleksandr.aleksandrov.project.test.android.movies.service.ServicesConstants.GET_MOVIES;
+import static com.aleksandr.aleksandrov.project.test.android.movies.service.ServicesConstants.IS_INTERNET_ACCESS;
 
 /**
  * Created by aleksandr on 9/29/17.
@@ -50,6 +49,11 @@ public class DataLoaderService extends IntentService {
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
 
+        if (!isOnline()) {
+            sendEvent(IS_INTERNET_ACCESS, true, null);
+            return;
+        }
+
         switch (intent.getAction()) {
             case GET_MOVIES:
                 getMovies();
@@ -57,6 +61,13 @@ public class DataLoaderService extends IntentService {
             default:
                 break;
         }
+    }
+
+    public boolean isOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
     private void getMovies() {
@@ -72,12 +83,15 @@ public class DataLoaderService extends IntentService {
                     DBHelper.setGenres(getApplicationContext(), response.body());
                     DBHelper.setYears(getApplicationContext(), response.body());
                     sendEvent(GET_MOVIES, true, null);
+                } else {
+                    sendEvent(GET_MOVIES, false, null);
                 }
             }
 
             @Override
             public void onFailure(Call<List<Movie>> call, Throwable t) {
                 Log.d(TAG, "response code: " + t.getMessage());
+                sendEvent(GET_MOVIES, false, t.getMessage());
             }
         });
     }
@@ -120,10 +134,6 @@ public class DataLoaderService extends IntentService {
 
     private OkHttpClient getClient() {
         OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder();
-
-        httpClientBuilder.connectTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS);
 
         httpClient = httpClientBuilder.build();
         return httpClient;
